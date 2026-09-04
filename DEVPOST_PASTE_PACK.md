@@ -18,6 +18,12 @@ Vanilla JavaScript, Web Audio API, localStorage, Python, PyTorch, Hugging Face T
 - Demo: https://xqscora.github.io/signalbridge-classroom/?demo=1
 - Cover: `assets/signalbridge-cover.png`
 
+## Video artifact
+
+- Local recording: `demo/signalbridge_classroom_demo_2026-09-05.webm`
+- Verified: 121.5 seconds, 1280x900, 25 fps, playable with OpenCV
+- Upload target: Cora's YouTube account as Unlisted, then paste the returned YouTube URL into the Devpost video field.
+
 ## Inspiration
 
 Students do not all express cognitive load in the same way. A student may be ready to continue, need a pause, or be unsure, but a generic classifier can turn those differences into a confident wrong label. In a classroom, the cost is not just accuracy: the wrong support arrives at the wrong time. A label alone also does not tell a teacher what to do next.
