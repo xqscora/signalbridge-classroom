@@ -73,6 +73,13 @@
             <p class="panel-copy">The model does not decide what a feeling is. It learns which support state your signal usually means.</p>
             <div id="profileRows" class="profile-rows"></div>
             <div class="adaptation-box"><div><span>Personalization</span><strong id="adaptationValue">0%</strong></div><div class="meter"><span id="adaptationMeter"></span></div><small id="adaptationHint">Add one confirmed sample to start adapting.</small></div>
+            <div class="protocol-box">
+              <div class="protocol-heading"><p class="eyebrow">STUDENT-OWNED PROTOCOL</p><span class="protocol-lock">local</span></div>
+              <p class="protocol-copy">Choose what each support state should ask a teacher to do. The learner owns the action mapping.</p>
+              <div id="protocolRows" class="protocol-rows"></div>
+              <small id="protocolHint">These actions are preferences, not model labels. They stay in this browser.</small>
+              <p id="outcomeSummary" class="outcome-summary">No support outcomes logged yet. The pilot starts with the learner's own definition.</p>
+            </div>
           </article>
 
           <article class="panel explanation-panel">
@@ -90,6 +97,12 @@
             <div class="teacher-signal"><span id="teacherGlyph">—</span><div><strong id="teacherState">Waiting for a student signal</strong><small id="teacherTime">No raw audio is stored.</small></div></div>
             <p id="teacherAction">A teacher sees a suggested next move, not a private recording or a diagnosis.</p>
             <div id="teacherActions" class="teacher-actions"><button type="button" disabled>Next action appears here</button></div>
+            <div id="outcomeBox" class="outcome-box" hidden>
+              <p class="eyebrow">AFTER THE SUPPORT</p>
+              <p class="outcome-question">Did that action help?</p>
+              <div id="outcomeActions" class="outcome-actions"></div>
+              <small id="outcomeHint">Log only whether the support action helped.</small>
+            </div>
           </div>
           <div class="privacy-points"><span>⌾ Local signal features only</span><span>◫ Student can correct every read</span><span>⊘ No diagnostic label</span></div>
         </article>

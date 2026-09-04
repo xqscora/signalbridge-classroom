@@ -6,7 +6,7 @@ SignalBridge is an education-first adaptation of Cora's existing Heard/Cerome wo
 - Please pause
 - Ask me
 
-The browser prototype extracts compact acoustic features locally, compares them with weighted support-state centroids, abstains when confidence or separation is low, and updates a learner-specific centroid only after a student or teacher confirms/corrects the read. No raw audio is stored or uploaded.
+The browser prototype extracts compact acoustic features locally, compares them with weighted support-state centroids, abstains when confidence or separation is low, and updates a learner-specific centroid only after a student or teacher confirms/corrects the read. The learner also chooses the support action for each state; after a teacher tries it, the app records only a local helped/not-helped outcome. No raw audio is stored or uploaded.
 
 ## Why this is a real adaptation
 
@@ -31,7 +31,7 @@ Open `http://127.0.0.1:8787/?demo=1`. Sample phrases exercise the model without 
 
 ## Technical core
 
-The model is deliberately inspectable: five normalized acoustic features, weighted Euclidean distance to three centroids, softmax-like similarity scores, a confidence threshold, and a top-two margin threshold. A correction updates only the selected learner profile using an online mean. This gives a judge an end-to-end ML loop they can test in under two minutes.
+The model is deliberately inspectable: five normalized acoustic features, weighted Euclidean distance to three centroids, softmax-like similarity scores, a confidence threshold, and a top-two margin threshold. A correction updates only the selected learner profile using an online mean. The support layer is separate from the classifier: a learner-owned protocol maps each state to an action, and outcome evidence is tracked per action. This gives a school pilot a measurable workflow without turning a prediction into an automatic intervention.
 
 The existing USAII experiment remains the empirical foundation for why personalization matters: its RAVDESS speaker-independent baseline is 64%, rising to 75% after three samples per emotion. The public competition demo uses support-state labels rather than claiming the RAVDESS model is a classroom-ready autism detector.
 
@@ -47,7 +47,7 @@ The adapter converts the research model's emotion probabilities into a bounded s
 
 ## Product and market boundary
 
-The first customer is a school learning-support team that needs a low-friction way to honor a student's communication preferences during transitions, group work, or high-load tasks. The privacy posture is designed for a pilot: local-first storage, student-visible corrections, no raw media retention, no diagnostic labels, and an explicit human decision layer.
+The first customer is a school learning-support team that needs a low-friction way to honor a student's communication preferences during transitions, group work, or high-load tasks. The product wedge is the support protocol and outcome loop: a team can test whether a specific accommodation helped a specific learner without buying a surveillance dashboard or exporting raw voice. The privacy posture is designed for a pilot: local-first storage, student-visible corrections, no raw media retention, no diagnostic labels, and an explicit human decision layer.
 
 ## Files
 

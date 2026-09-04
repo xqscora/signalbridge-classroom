@@ -1,4 +1,5 @@
-const STORAGE_KEY = "signalbridge_classroom_v1";
+const STORAGE_KEY = "signalbridge_classroom_v2";
+const LEGACY_STORAGE_KEY = "signalbridge_classroom_v1";
 const LABELS = ["ready", "pause", "ask"];
 const LABEL_META = {
   ready: { title: "Keep going", support: "The learner is probably ready to continue.", glyph: ">", color: "ready" },
@@ -20,9 +21,29 @@ const DEMO_FEATURES = {
   ask: [0.51, 0.46, 0.48, 0.45, 0.52]
 };
 
+// The classifier produces a support state; the learner still owns the action
+// that state should trigger. Outcome counts make the school pilot measurable
+// without sending audio, labels, or student identity to a server.
+const SUPPORT_OPTIONS = {
+  ready: [
+    { id: "continue", title: "Continue quietly", detail: "Continue the task without interrupting the learner's flow." },
+    { id: "next-step", title: "Show the next step", detail: "Show one concrete next step and keep the learner in control." }
+  ],
+  pause: [
+    { id: "lower-load", title: "Offer a lower-load step", detail: "Offer a lower-load step, quiet pause, or choice of how to continue." },
+    { id: "quiet-space", title: "Give a quiet pause", detail: "Give a short quiet pause and return control to the learner." }
+  ],
+  ask: [
+    { id: "ask-directly", title: "Ask directly", detail: "Ask the learner directly. Do not infer a feeling from an ambiguous signal." },
+    { id: "two-choices", title: "Offer two choices", detail: "Offer two concrete choices instead of guessing what the learner needs." }
+  ]
+};
+
 const state = {
   profiles: loadProfiles(),
   history: loadHistory(),
+  plans: loadPlans(),
+  outcomes: loadOutcomes(),
   current: null,
   audio: { context: null, analyser: null, stream: null, timer: null, frames: [] }
 };
@@ -42,12 +63,18 @@ const els = {
   adaptationValue: document.querySelector("#adaptationValue"),
   adaptationMeter: document.querySelector("#adaptationMeter"),
   adaptationHint: document.querySelector("#adaptationHint"),
+  protocolRows: document.querySelector("#protocolRows"),
+  protocolHint: document.querySelector("#protocolHint"),
+  outcomeSummary: document.querySelector("#outcomeSummary"),
   receiptRows: document.querySelector("#receiptRows"),
   teacherGlyph: document.querySelector("#teacherGlyph"),
   teacherState: document.querySelector("#teacherState"),
   teacherTime: document.querySelector("#teacherTime"),
   teacherAction: document.querySelector("#teacherAction"),
   teacherActions: document.querySelector("#teacherActions"),
+  outcomeBox: document.querySelector("#outcomeBox"),
+  outcomeActions: document.querySelector("#outcomeActions"),
+  outcomeHint: document.querySelector("#outcomeHint"),
   eventCount: document.querySelector("#eventCount"),
   historyList: document.querySelector("#historyList"),
   resetBtn: document.querySelector("#resetBtn")
@@ -64,19 +91,28 @@ function init() {
   els.stopBtn.addEventListener("click", stopRecording);
   els.resetBtn.addEventListener("click", resetDemo);
   renderProfiles();
+  renderProtocol();
   renderHistory();
   if (new URLSearchParams(window.location.search).get("demo") === "1") {
     window.setTimeout(() => runSample("pause"), 250);
   }
 }
 
-function loadProfiles() {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
-    if (saved?.profiles) return saved.profiles;
-  } catch {
-    // A fresh in-browser model is the conservative fallback.
+function loadStored() {
+  for (const key of [STORAGE_KEY, LEGACY_STORAGE_KEY]) {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(key) || "null");
+      if (saved) return saved;
+    } catch {
+      // A fresh in-browser model is the conservative fallback.
+    }
   }
+  return null;
+}
+
+function loadProfiles() {
+  const saved = loadStored();
+  if (saved?.profiles) return saved.profiles;
   return LABELS.reduce((profiles, label) => {
     profiles[label] = { count: 0, centroid: [...BASELINE[label]] };
     return profiles;
@@ -84,17 +120,61 @@ function loadProfiles() {
 }
 
 function loadHistory() {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
-    return Array.isArray(saved?.history) ? saved.history : [];
-  } catch {
-    return [];
-  }
+  const saved = loadStored();
+  return Array.isArray(saved?.history) ? saved.history : [];
+}
+
+function defaultPlans() {
+  return LABELS.reduce((plans, label) => {
+    plans[label] = { selected: SUPPORT_OPTIONS[label][0].id };
+    return plans;
+  }, {});
+}
+
+function loadPlans() {
+  const plans = defaultPlans();
+  const saved = loadStored()?.plans;
+  LABELS.forEach((label) => {
+    const selected = saved?.[label]?.selected;
+    if (SUPPORT_OPTIONS[label].some((option) => option.id === selected)) plans[label].selected = selected;
+  });
+  return plans;
+}
+
+function defaultOutcomes() {
+  return LABELS.reduce((outcomes, label) => {
+    outcomes[label] = SUPPORT_OPTIONS[label].reduce((actions, option) => {
+      actions[option.id] = { helped: 0, total: 0 };
+      return actions;
+    }, {});
+    return outcomes;
+  }, {});
+}
+
+function loadOutcomes() {
+  const outcomes = defaultOutcomes();
+  const saved = loadStored()?.outcomes;
+  LABELS.forEach((label) => {
+    SUPPORT_OPTIONS[label].forEach((option) => {
+      const entry = saved?.[label]?.[option.id];
+      if (!entry) return;
+      outcomes[label][option.id] = {
+        helped: Number.isFinite(entry.helped) ? entry.helped : 0,
+        total: Number.isFinite(entry.total) ? entry.total : 0
+      };
+    });
+  });
+  return outcomes;
 }
 
 function persist() {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ profiles: state.profiles, history: state.history }));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      profiles: state.profiles,
+      history: state.history,
+      plans: state.plans,
+      outcomes: state.outcomes
+    }));
   } catch {
     setStatus("Browser storage is unavailable; no raw audio was kept.");
   }
@@ -176,20 +256,107 @@ function renderReceipt(result) {
 
 function renderTeacherView(result) {
   const meta = LABEL_META[result.label];
+  const option = getSelectedOption(result.label);
   els.teacherGlyph.textContent = meta.glyph;
   els.teacherState.textContent = meta.title;
   els.teacherTime.textContent = `${result.source}; features only, no recording stored`;
-  const action = {
-    ready: "Continue the task without interrupting the learner’s flow.",
-    pause: "Offer a lower-load step, quiet pause, or choice of how to continue.",
-    ask: "Ask the learner directly. Do not infer a feeling from an ambiguous signal."
-  }[result.label];
-  els.teacherAction.textContent = action;
+  els.teacherAction.textContent = option.detail;
   els.teacherActions.replaceChildren();
   const actionButton = document.createElement("button");
   actionButton.type = "button";
-  actionButton.textContent = result.label === "ask" ? "Ask: What would help right now?" : `Suggested move: ${action}`;
+  actionButton.textContent = `Suggested move: ${option.title}`;
   els.teacherActions.append(actionButton);
+  renderOutcomeControls(result);
+}
+
+function getSelectedOption(label) {
+  const selected = state.plans[label]?.selected;
+  return SUPPORT_OPTIONS[label].find((option) => option.id === selected) || SUPPORT_OPTIONS[label][0];
+}
+
+function renderProtocol() {
+  els.protocolRows.replaceChildren();
+  LABELS.forEach((label) => {
+    const row = document.createElement("label");
+    row.className = "protocol-row";
+    const copy = document.createElement("span");
+    copy.className = `protocol-state ${label}`;
+    copy.textContent = LABEL_META[label].title;
+    const select = document.createElement("select");
+    select.setAttribute("aria-label", `${LABEL_META[label].title} support action`);
+    SUPPORT_OPTIONS[label].forEach((option) => {
+      const item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.title;
+      item.selected = option.id === state.plans[label].selected;
+      select.append(item);
+    });
+    select.addEventListener("change", () => {
+      state.plans[label].selected = select.value;
+      persist();
+      renderProtocol();
+      if (state.current) renderTeacherView(state.current);
+      setStatus("Student-owned support protocol updated locally");
+    });
+    row.append(copy, select);
+    els.protocolRows.append(row);
+  });
+  els.protocolHint.textContent = "These actions are preferences, not model labels. They stay in this browser.";
+  renderOutcomeSummary();
+}
+
+function renderOutcomeSummary() {
+  const entries = LABELS.flatMap((label) => Object.values(state.outcomes[label]));
+  const total = entries.reduce((sum, entry) => sum + entry.total, 0);
+  const helped = entries.reduce((sum, entry) => sum + entry.helped, 0);
+  els.outcomeSummary.textContent = total
+    ? `${helped}/${total} logged support actions helped · local pilot evidence`
+    : "No support outcomes logged yet. The pilot starts with the learner's own definition.";
+}
+
+function renderOutcomeControls(result) {
+  const option = getSelectedOption(result.label);
+  const stats = state.outcomes[result.label][option.id];
+  els.outcomeBox.hidden = false;
+  els.outcomeActions.replaceChildren();
+  [
+    ["helped", "It helped"],
+    ["partial", "It helped partly"],
+    ["skipped", "Not used"]
+  ].forEach(([outcome, title]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.outcome = outcome;
+    button.textContent = title;
+    button.addEventListener("click", () => applyOutcome(outcome));
+    els.outcomeActions.append(button);
+  });
+  const rate = stats.total ? `${Math.round(stats.helped / stats.total * 100)}% helpful across ${stats.total} logged use${stats.total === 1 ? "" : "s"}` : "No outcome data for this action yet";
+  els.outcomeHint.textContent = `${option.title} · ${rate}. Only the aggregate outcome is kept locally.`;
+}
+
+function applyOutcome(outcome) {
+  if (!state.current) return;
+  const label = state.current.label;
+  const option = getSelectedOption(label);
+  const stats = state.outcomes[label][option.id];
+  stats.total += 1;
+  if (outcome === "helped") stats.helped += 1;
+  state.history.unshift({
+    id: Date.now(),
+    label,
+    modelLabel: state.current.label,
+    feedback: `outcome: ${outcome}`,
+    action: option.title,
+    source: state.current.source,
+    time: new Date().toISOString()
+  });
+  state.history = state.history.slice(0, 8);
+  persist();
+  renderHistory();
+  renderProtocol();
+  renderOutcomeControls(state.current);
+  setStatus("Support outcome logged locally");
 }
 
 function applyFeedback(feedback) {
@@ -324,7 +491,7 @@ function renderHistory() {
     stateCell.className = `state ${event.label}`;
     stateCell.textContent = LABEL_META[event.label].title;
     const source = document.createElement("small");
-    source.textContent = event.source;
+    source.textContent = event.action ? `${event.action} · ${event.source}` : event.source;
     const feedback = document.createElement("span");
     feedback.className = "feedback-tag";
     feedback.textContent = event.feedback;
@@ -340,6 +507,8 @@ function resetDemo() {
     return profiles;
   }, {});
   state.history = [];
+  state.plans = defaultPlans();
+  state.outcomes = defaultOutcomes();
   state.current = null;
   els.currentState.textContent = "No signal yet";
   els.currentSupport.textContent = "Choose a sample phrase or record a short check-in.";
@@ -358,6 +527,10 @@ function resetDemo() {
   els.teacherTime.textContent = "No raw audio is stored.";
   els.teacherAction.textContent = "A teacher sees a suggested next move, not a private recording or a diagnosis.";
   els.teacherActions.replaceChildren();
+  els.outcomeBox.hidden = true;
+  els.outcomeActions.replaceChildren();
+  els.outcomeHint.textContent = "Log only whether the support action helped.";
+  renderProtocol();
   renderProfiles();
   renderHistory();
   setStatus("Demo reset");
