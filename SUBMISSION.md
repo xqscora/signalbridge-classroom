@@ -24,7 +24,7 @@ The project adapts Cora Zeng's existing Heard/Cerome research package. That work
 
 ## How it was built
 
-The public demo is vanilla HTML/CSS/JavaScript so the full inference loop is inspectable in the browser. The model stores only aggregate feature vectors and counts in localStorage. The evidence panel links the adaptation to the existing trained-model experiment; it does not pretend that a small prototype is clinically validated.
+The public demo is vanilla HTML/CSS/JavaScript so the full inference loop is inspectable in the browser. The repository also includes the compact trained RAVDESS wav2vec2 artifact and `model_adapter.py` for a real local inference path. The model stores only aggregate feature vectors and counts in localStorage. The evidence panel links the adaptation to the existing trained-model experiment; it does not pretend that a small prototype is clinically validated.
 
 ## Responsible AI disclosure
 

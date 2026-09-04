@@ -35,6 +35,16 @@ The model is deliberately inspectable: five normalized acoustic features, weight
 
 The existing USAII experiment remains the empirical foundation for why personalization matters: its RAVDESS speaker-independent baseline is 64%, rising to 75% after three samples per emotion. The public competition demo uses support-state labels rather than claiming the RAVDESS model is a classroom-ready autism detector.
 
+## Optional real-model path
+
+The repository also includes the trained `ravdess_w2v_ser_model.joblib` artifact from the base project and `model_adapter.py`. With the dependencies in `requirements.txt`, a local audio file can be passed through the original wav2vec2 + LogisticRegression model:
+
+```powershell
+python model_adapter.py path/to/audio.wav
+```
+
+The adapter converts the research model's emotion probabilities into a bounded support-state prior, then applies the same abstention idea. This path is intentionally local and is not required by the public Pages demo. The domain limitation remains explicit: RAVDESS is a generic adult speech dataset, so the result is a prior for calibration, not a diagnosis or a claim about autistic speech.
+
 ## Product and market boundary
 
 The first customer is a school learning-support team that needs a low-friction way to honor a student's communication preferences during transitions, group work, or high-load tasks. The privacy posture is designed for a pilot: local-first storage, student-visible corrections, no raw media retention, no diagnostic labels, and an explicit human decision layer.
@@ -43,6 +53,8 @@ The first customer is a school learning-support team that needs a low-friction w
 
 - `index.html`: student check-in, learner model, teacher view, and evidence surface
 - `app.js`: feature extraction, classifier, abstention policy, online personalization, and local memory
+- `model_adapter.py`: optional local bridge to the real trained wav2vec2 model
+- `models/ravdess_w2v_ser_model.joblib`: compact trained artifact reused from Heard
 - `styles.css`: responsive product UI
 - `SUBMISSION.md`: competition-facing story and disclosure
 - `QA.md`: repeatable smoke checks

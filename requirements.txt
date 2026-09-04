@@ -1,0 +1,6 @@
+joblib
+librosa
+numpy
+scikit-learn
+torch
+transformers
