@@ -16,3 +16,7 @@ python -m http.server 8787
 5. Click `It helped`; confirm the local outcome evidence changes to `1/1` and the history records the action.
 6. Click `Reset demo`; confirm counters, protocol choices, and the current readout return to their empty state.
 7. On a permissioned HTTPS/localhost origin, click `Record 3 seconds`; confirm the microphone path ends in a readout and no raw audio file is created.
+
+## Competition recording
+
+With the local server running on port `8787`, run `python record_demo.py`. The script produces a project-specific approximately two-minute WebM showing protocol selection, personalization, outcome logging, and abstention.

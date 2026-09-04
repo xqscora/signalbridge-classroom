@@ -54,6 +54,7 @@ The first customer is a school learning-support team that needs a low-friction w
 - `index.html`: student check-in, learner model, teacher view, and evidence surface
 - `app.js`: feature extraction, classifier, abstention policy, online personalization, and local memory
 - `model_adapter.py`: optional local bridge to the real trained wav2vec2 model
+- `record_demo.py`: repeatable approximately two-minute browser walkthrough for the competition video
 - `models/ravdess_w2v_ser_model.joblib`: compact trained artifact reused from Heard
 - `styles.css`: responsive product UI
 - `SUBMISSION.md`: competition-facing story and disclosure
