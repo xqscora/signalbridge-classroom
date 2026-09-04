@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SignalBridge Classroom</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="SignalBridge home">
+        <span class="brand-mark">S</span>
+        <span><strong>SignalBridge</strong><small>Classroom support, learned per learner</small></span>
+      </a>
+      <div class="top-actions">
+        <span class="status-dot"><i></i> Local-only prototype</span>
+        <button id="resetBtn" class="button ghost" type="button">Reset demo</button>
+      </div>
+    </header>
+
+    <main id="top" class="shell">
+      <section class="intro">
+        <div>
+          <p class="kicker">EDUCATION × PERSONALIZED ML</p>
+          <h1>A support signal that learns the learner.</h1>
+          <p class="lede">SignalBridge turns a student’s own voice patterns into a private, correctable classroom signal: <em>keep going</em>, <em>pause</em>, or <em>ask me</em>.</p>
+        </div>
+        <div class="trust-strip">
+          <div><strong>3</strong><span>student-defined states</span></div>
+          <div><strong>0</strong><span>raw recordings uploaded</span></div>
+          <div><strong>1</strong><span>human confirmation layer</span></div>
+        </div>
+      </section>
+
+      <section class="workspace-grid" aria-label="SignalBridge workspace">
+        <article class="panel checkin-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">LIVE CHECK-IN</p><h2>What does this signal mean for you?</h2></div>
+            <span id="recordStatus" class="status-chip">Ready</span>
+          </div>
+          <div class="signal-orb" id="signalOrb"><span id="orbGlyph">●</span></div>
+          <div class="readout">
+            <p class="eyebrow">CURRENT READ</p>
+            <h3 id="currentState">No signal yet</h3>
+            <p id="currentSupport">Choose a sample phrase or record a short check-in.</p>
+            <div class="confidence-line"><span>Model confidence</span><strong id="confidenceValue">--</strong></div>
+            <div class="meter"><span id="confidenceMeter"></span></div>
+          </div>
+          <div class="sample-actions" aria-label="Sample check-ins">
+            <button class="sample-button ready" data-sample="ready" type="button"><span>↗</span><b>I can continue</b><small>ready to learn</small></button>
+            <button class="sample-button pause" data-sample="pause" type="button"><span>Ⅱ</span><b>Please pause</b><small>needs lower load</small></button>
+            <button class="sample-button ask" data-sample="ask" type="button"><span>?</span><b>I'm not sure</b><small>needs a check-in</small></button>
+          </div>
+          <div class="record-row">
+            <button id="recordBtn" class="button primary" type="button"><span>●</span> Record 3 seconds</button>
+            <button id="stopBtn" class="button ghost" type="button" disabled>Stop</button>
+            <span id="micHint">Microphone permission stays in this browser.</span>
+          </div>
+          <div class="feedback-block">
+            <div><p class="eyebrow">HUMAN CHECK</p><p>Was that read useful?</p></div>
+            <div class="feedback-actions">
+              <button class="feedback-button" data-feedback="correct" type="button">That was right</button>
+              <button class="feedback-button" data-feedback="ready" type="button">Correct: continue</button>
+              <button class="feedback-button" data-feedback="pause" type="button">Correct: pause</button>
+              <button class="feedback-button" data-feedback="ask" type="button">Correct: ask me</button>
+            </div>
+          </div>
+        </article>
+
+        <aside class="right-column">
+          <article class="panel learner-panel">
+            <div class="panel-heading"><div><p class="eyebrow">LEARNER MODEL</p><h2>Built from your corrections</h2></div><span class="memory-icon">◌</span></div>
+            <p class="panel-copy">The model does not decide what a feeling is. It learns which support state your signal usually means.</p>
+            <div id="profileRows" class="profile-rows"></div>
+            <div class="adaptation-box"><div><span>Personalization</span><strong id="adaptationValue">0%</strong></div><div class="meter"><span id="adaptationMeter"></span></div><small id="adaptationHint">Add one confirmed sample to start adapting.</small></div>
+          </article>
+
+          <article class="panel explanation-panel">
+            <div class="panel-heading"><div><p class="eyebrow">MODEL RECEIPT</p><h2>Why this order?</h2></div><span class="receipt-icon">✓</span></div>
+            <div id="receiptRows" class="receipt-rows"><p class="empty-state">A model receipt appears after a check-in.</p></div>
+            <div class="rule-note"><span>↳</span><p><strong>Abstain before guessing.</strong> Low confidence or a close tie becomes “ask me”, never a forced label.</p></div>
+          </article>
+        </aside>
+      </section>
+
+      <section class="lower-grid">
+        <article class="panel teacher-panel">
+          <div class="panel-heading"><div><p class="eyebrow">TEACHER VIEW</p><h2>Support, without surveillance</h2></div><span class="lock-icon">⌁</span></div>
+          <div class="teacher-card">
+            <div class="teacher-signal"><span id="teacherGlyph">—</span><div><strong id="teacherState">Waiting for a student signal</strong><small id="teacherTime">No raw audio is stored.</small></div></div>
+            <p id="teacherAction">A teacher sees a suggested next move, not a private recording or a diagnosis.</p>
+            <div id="teacherActions" class="teacher-actions"><button type="button" disabled>Next action appears here</button></div>
+          </div>
+          <div class="privacy-points"><span>⌾ Local signal features only</span><span>◫ Student can correct every read</span><span>⊘ No diagnostic label</span></div>
+        </article>
+
+        <article class="panel evidence-panel">
+          <div class="panel-heading"><div><p class="eyebrow">EVIDENCE FROM THE BASE PROJECT</p><h2>Personalization is the point</h2></div><span class="evidence-badge">RAVDESS</span></div>
+          <div class="evidence-stats"><div><strong>64%</strong><span>generic speaker-independent</span></div><div class="arrow">→</div><div class="highlight"><strong>75%</strong><span>with 3 samples per emotion</span></div></div>
+          <img src="assets/personalization_curve.png" alt="Personalization accuracy curve" class="evidence-image" />
+          <p class="evidence-caption">SignalBridge carries this measured idea into a classroom workflow: the learner’s corrections are the adaptation data.</p>
+        </article>
+      </section>
+
+      <section class="panel history-panel">
+        <div class="panel-heading"><div><p class="eyebrow">LOCAL MEMORY</p><h2>Recent support decisions</h2></div><span id="eventCount" class="count-badge">0 checks</span></div>
+        <div id="historyList" class="history-list"><p class="empty-state">Your confirmed support history stays in this browser.</p></div>
+      </section>
+
+      <footer class="footer-note"><span>SignalBridge Classroom · prototype for educational support</span><span>AI output is a hint. The learner and teacher stay in control.</span></footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
